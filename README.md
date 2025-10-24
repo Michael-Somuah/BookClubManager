@@ -1,6 +1,12 @@
 Project Title: Book Club Manager
 Team: Group 12
-Participant: Michael Somuah
+Participant: 
+1.Michael Pamfo Odum Somuah
+2.Khadijah Asirurt
+3.Norbert Samuel Quaye Odai
+4.kwabena Ofosu Appaih Asiamah 
+        
+
 Category: DevOps — Ecowas Software Development Tournament 2025
 1. Overview
 As  Group 12, we designed and implemented the Book Club Manager — a Streamlit web application connected to a MySQL database that helps book clubs organize books, meetings, and discussions.
