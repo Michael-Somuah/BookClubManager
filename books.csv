@@ -1,0 +1,4 @@
+id,title,author,genre,pages_total,pages_read,status,rating,start_date,finish_date,meeting_date,created_at,updated_at
+1,"The Midnight Library","Matt Haig","Fiction",304,150,Reading,4.5,2025-10-01,,2025-10-28,2025-10-22 07:00:00,2025-10-22 07:00:00
+2,"Atomic Habits","James Clear","Self-help",320,320,Finished,5.0,2025-03-10,2025-03-25,2025-11-04,2025-03-10 09:00:00,2025-03-25 13:00:00
+3,"Heart of Darkness","Joseph Conrad","Classic,Adventure",128,0,To Read,0.0,,,2025-11-18,2025-10-22 07:10:00,2025-10-22 07:10:00
