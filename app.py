@@ -5,9 +5,7 @@ import plotly.express as px
 import hashlib
 from datetime import datetime
 
-# ---------------------------
-# DATABASE CONNECTION
-# ---------------------------
+# database connect
 def get_connection():
     return mysql.connector.connect(
         host="localhost",
@@ -16,15 +14,12 @@ def get_connection():
         database="bookclubdb"
     )
 
-# ---------------------------
-# PASSWORD SECURITY
-# ---------------------------
+# password place
+
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ---------------------------
-# CREATE TABLES IF NOT EXIST
-# ---------------------------
+
 def ensure_tables():
     conn = get_connection()
     cursor = conn.cursor()
@@ -65,7 +60,6 @@ def ensure_tables():
     );
     """)
 
-    # Default admin (Group12 / Devops)
     cursor.execute("SELECT COUNT(*) FROM users WHERE username='Group12'")
     if cursor.fetchone()[0] == 0:
         cursor.execute(
@@ -76,9 +70,8 @@ def ensure_tables():
 
     conn.close()
 
-# ---------------------------
-# FETCH / INSERT FUNCTIONS
-# ---------------------------
+# fetch or install function
+
 def fetch_books_df():
     conn = get_connection()
     df = pd.read_sql("SELECT * FROM books", conn)
@@ -99,11 +92,24 @@ def add_book(data):
     conn.close()
 
 def update_book(book_id, data):
+    # Convert any NumPy or pandas numeric types to native Python
+    def to_native(val):
+        if hasattr(val, "item"):  # e.g. numpy.int64, numpy.float64
+            return val.item()
+        return val
+
+    book_id = to_native(book_id)
+    for key in ["pages_total", "pages_read", "rating"]:
+        if key in data:
+            data[key] = to_native(data[key])
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        UPDATE books SET title=%s, author=%s, genre=%s, pages_total=%s,
-        pages_read=%s, status=%s, rating=%s, meeting_date=%s WHERE id=%s
+        UPDATE books
+        SET title=%s, author=%s, genre=%s, pages_total=%s,
+            pages_read=%s, status=%s, rating=%s, meeting_date=%s
+        WHERE id=%s
     """, (
         data["title"], data["author"], data["genre"], data["pages_total"],
         data["pages_read"], data["status"], data["rating"], data["meeting_date"], book_id
@@ -111,14 +117,24 @@ def update_book(book_id, data):
     conn.commit()
     conn.close()
 
+
 def delete_book(book_id):
+    # Ensure book_id is a native Python type
+    if hasattr(book_id, "item"):
+        book_id = book_id.item()
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM books WHERE id=%s", (book_id,))
     conn.commit()
     conn.close()
 
+
 def add_discussion(book_id, username, comment):
+    # Ensure book_id is a native Python type
+    if hasattr(book_id, "item"):
+        book_id = book_id.item()
+
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -128,15 +144,19 @@ def add_discussion(book_id, username, comment):
     conn.commit()
     conn.close()
 
+
 def fetch_discussions(book_id):
+    # Ensure book_id is a native Python type
+    if hasattr(book_id, "item"):
+        book_id = book_id.item()
+
     conn = get_connection()
     df = pd.read_sql(f"SELECT * FROM discussions WHERE book_id={book_id}", conn)
     conn.close()
     return df
 
-# ---------------------------
-# LOGIN SYSTEM
-# ---------------------------
+# the login system
+
 def login(username, password):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -146,10 +166,7 @@ def login(username, password):
     if user and user["password"] == hash_password(password):
         return user
     return None
-
-# ---------------------------
-# STREAMLIT CONFIG
-# ---------------------------
+# streamlit
 st.set_page_config(
     page_title=" Book Club Manager",
     page_icon="",
@@ -157,10 +174,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inject dark theme style
+# inject dark theme style
 st.markdown("""
     <style>
-    body {background-color: #0e1117; color: #fafafa;}
+    body {background-color: #0e1117; color: #FFOED;}
     .stApp {background-color: #0e1117;}
     .css-18e3th9 {background-color: #0e1117;}
     .css-1d391kg {background-color: #1e1e1e;}
@@ -169,15 +186,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------
-# MAIN APP
-# ---------------------------
+# main app
+
 ensure_tables()
 
 if "user" not in st.session_state:
     st.session_state.user = None
 
-# LOGIN PAGE
+# loginpage
 if not st.session_state.user:
     st.title(" Login to Book Club Manager")
     username = st.text_input("Username")
@@ -192,16 +208,13 @@ if not st.session_state.user:
             st.error("Invalid username or password")
     st.stop()
 
-# MAIN DASHBOARD
+# this is our main dashboard
 user = st.session_state.user
 st.sidebar.title(" Book Club Manager")
 st.sidebar.write(f"Logged in as: **{user['username']} ({user['role']})**")
 
 menu = st.sidebar.radio("Navigation", ["View Books", "Add Book", "Edit/Delete Books", "Discussions", "Analytics"])
-
-# ---------------------------
-#  VIEW BOOKS
-# ---------------------------
+# view books
 if menu == "View Books":
     st.title(" Book Catalogue")
     books = fetch_books_df()
@@ -210,9 +223,8 @@ if menu == "View Books":
     else:
         st.dataframe(books)
 
-# ---------------------------
-#  ADD BOOK
-# ---------------------------
+# add a book
+
 elif menu == "Add Book":
     st.title(" Add a New Book")
     with st.form("add_form"):
@@ -241,9 +253,9 @@ elif menu == "Add Book":
                 })
                 st.success(" Book added successfully!")
 
-# ---------------------------
-# EDIT / DELETE BOOKS
-# ---------------------------
+
+# edit and delete
+
 elif menu == "Edit/Delete Books":
     st.title(" Manage Books")
     books = fetch_books_df()
@@ -281,9 +293,8 @@ elif menu == "Edit/Delete Books":
                 st.warning("Book deleted.")
                 st.rerun()
 
-# ---------------------------
-#  DISCUSSIONS
-# ---------------------------
+#  disccussion
+
 elif menu == "Discussions":
     st.title(" Book Discussions")
     books = fetch_books_df()
@@ -307,11 +318,11 @@ elif menu == "Discussions":
                 st.success(" Comment added!")
                 st.rerun()
             else:
-                st.error("Please write a comment before posting.")
+                st.error("Mpakyew write a comment before posting.")
 
-# ---------------------------
-# ANALYTICS
-# ---------------------------
+
+# analytic
+
 elif menu == "Analytics":
     st.title(" Analytics Dashboard")
     books = fetch_books_df()
